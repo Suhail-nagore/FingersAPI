@@ -1,0 +1,6 @@
+@FingersAPI_HostAddress = http://localhost:5293
+
+GET {{FingersAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

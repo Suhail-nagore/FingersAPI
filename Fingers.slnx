@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Fingers.Database/Fingers.Database.csproj" />
+  <Project Path="FingersAPI/FingersAPI.csproj" />
+</Solution>
