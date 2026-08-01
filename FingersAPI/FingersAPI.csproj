@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
@@ -15,11 +16,9 @@
 
   <ItemGroup>
     <Folder Include="Common\" />
-    <Folder Include="Extensions\" />
     <Folder Include="Hubs\" />
     <Folder Include="Models\Chat\" />
     <Folder Include="Models\User\" />
-    <Folder Include="Services\Interfaces\" />
   </ItemGroup>
 
 </Project>

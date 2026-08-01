@@ -1,9 +1,12 @@
 using FingersAPI.Database;
+using FingersAPI.Extensions;
+using FingersAPI.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddApplicationServices();
 builder.Services.AddScoped<IDbContext, DbContext>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddEndpointsApiExplorer();

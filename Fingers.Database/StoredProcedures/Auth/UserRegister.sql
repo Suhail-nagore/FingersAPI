@@ -11,7 +11,7 @@ Description  : Registers a new user.
 
 CREATE OR ALTER PROCEDURE auth.UserRegister
 (
-    @Username       NVARCHAR(50),
+    @UserName       NVARCHAR(50),
     @DisplayName    NVARCHAR(100),
     @Email          NVARCHAR(320),
     @PasswordHash   NVARCHAR(MAX),
@@ -42,7 +42,7 @@ BEGIN
         (
             SELECT 1
             FROM auth.Users
-            WHERE Username = @Username
+            WHERE UserName = @UserName
               AND IsActive = 1
         )
         BEGIN
@@ -72,7 +72,7 @@ BEGIN
         -- Insert User
         INSERT INTO auth.Users
         (
-            Username,
+            UserName,
             DisplayName,
             Email,
             PasswordHash,
@@ -80,7 +80,7 @@ BEGIN
         )
         VALUES
         (
-            @Username,
+            @UserName,
             @DisplayName,
             @Email,
             @PasswordHash,
