@@ -9,12 +9,14 @@
   <ItemGroup>
     <Folder Include="Funtions\" />
     <Folder Include="Migrations\" />
+    <Folder Include="Schemas\" />
     <Folder Include="Setup\" />
     <Folder Include="StoredProcedures\Auth\" />
     <Folder Include="StoredProcedures\Chat\" />
     <Folder Include="StoredProcedures\Test\" />
+    <Folder Include="Tables\Common\" />
+    <Folder Include="Tables\Auth\" />
     <Folder Include="Views\" />
-    <Folder Include="Tables\" />
   </ItemGroup>
 
 </Project>
