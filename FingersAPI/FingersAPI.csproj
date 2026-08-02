@@ -21,7 +21,6 @@
     <Folder Include="Common\" />
     <Folder Include="Hubs\" />
     <Folder Include="Models\Chat\" />
-    <Folder Include="Models\User\" />
   </ItemGroup>
 
 </Project>

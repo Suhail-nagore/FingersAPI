@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Funtions\" />
     <Folder Include="Migrations\" />
     <Folder Include="Schemas\" />
     <Folder Include="Setup\" />
@@ -16,6 +15,7 @@
     <Folder Include="StoredProcedures\Test\" />
     <Folder Include="Tables\Common\" />
     <Folder Include="Tables\Auth\" />
+    <Folder Include="Tables\Chat\" />
     <Folder Include="Views\" />
   </ItemGroup>
 
