@@ -41,5 +41,45 @@ namespace FingersAPI.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("pending-request")]
+        public async Task<IActionResult> GetPendingRequests()
+        {
+            var parameter = new DynamicParameters();
+
+            parameter.Add("@ReceiverUserId", User.GetUserId());
+
+            var pendingRequests = await _dbContext.ExecuteQueryAsyncList<PendingConnectionRequestResult>("chat.PendingConnectionRequests", parameter);
+
+            return Ok(pendingRequests);
+
+        }
+
+
+        [HttpPost("action")]
+        public async Task<IActionResult> ConnectionAction(ConnectionActionRequest request)
+        {
+            var parameters = new DynamicParameters();
+
+            parameters.Add("@ConnectionId", request.ConnectionId);
+
+            parameters.Add("@CurrentUserId", User.GetUserId());
+
+            parameters.Add("@Action", request.Action.ToString());
+
+            parameters.Add("@Success",dbType: DbType.Boolean,direction: ParameterDirection.Output);
+
+            parameters.Add("@Message",dbType: DbType.String,size: 500,direction: ParameterDirection.Output);
+
+            await _dbContext.ExecuteAsync("chat.ConnectionAction",parameters);
+
+            var response = new ApiResponse
+            {
+                Success = parameters.Get<bool>("@Success"),
+                Message = parameters.Get<string>("@Message")!
+            };
+
+            return Ok(response);
+        }
     }
 }
