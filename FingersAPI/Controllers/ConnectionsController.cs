@@ -92,9 +92,10 @@ namespace FingersAPI.Controllers
 
             parameters.Add("@UserId", User.GetUserId());
             parameters.Add("@ListType", request.ListType.ToString());
+            parameters.Add("@SearchText", request.SearchText);
 
             var result = await _dbContext.ExecuteQueryAsyncList<ConnectionListResult>(
-                "chat.ConnectionListGet",
+                "chat.ConnectionsGet",
                 parameters);
 
             return Ok(result);
