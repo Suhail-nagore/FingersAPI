@@ -4,6 +4,7 @@
     {
         Accept = 1,
         Reject = 2,
-        Block = 3
+        Block = 3,
+        Unblock = 4,
     }
 }

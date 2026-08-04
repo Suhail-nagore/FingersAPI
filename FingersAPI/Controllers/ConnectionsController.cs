@@ -22,56 +22,26 @@ namespace FingersAPI.Controllers
         }
 
         [HttpPost("send-request")]
-        public async Task<IActionResult> SendConnectionRequest(SendConnectionRequest request )
+        public async Task<IActionResult> SendConnectionRequest(
+            SendConnectionRequest request)
         {
             var parameters = new DynamicParameters();
+
             parameters.Add("@SenderUserId", User.GetUserId());
             parameters.Add("@ReceiverUserId", request.ReceiverUserId);
 
-            parameters.Add("@Success", dbType:DbType.Boolean, direction:ParameterDirection.Output);
-            parameters.Add("@Message", dbType:DbType.String, size:500, direction:ParameterDirection.Output);
+            parameters.Add("@Success",
+                dbType: DbType.Boolean,
+                direction: ParameterDirection.Output);
 
-            await _dbContext.ExecuteAsync("chat.SendConnectionRequest", parameters);
+            parameters.Add("@Message",
+                dbType: DbType.String,
+                size: 500,
+                direction: ParameterDirection.Output);
 
-            var response = new ApiResponse
-            {
-                Success = parameters.Get<bool>("@Success"),
-                Message = parameters.Get<string>("@Message"),
-            };
-
-            return Ok(response);
-        }
-
-        [HttpGet("pending-request")]
-        public async Task<IActionResult> GetPendingRequests()
-        {
-            var parameter = new DynamicParameters();
-
-            parameter.Add("@ReceiverUserId", User.GetUserId());
-
-            var pendingRequests = await _dbContext.ExecuteQueryAsyncList<PendingConnectionRequestResult>("chat.PendingConnectionRequests", parameter);
-
-            return Ok(pendingRequests);
-
-        }
-
-
-        [HttpPost("action")]
-        public async Task<IActionResult> ConnectionAction(ConnectionActionRequest request)
-        {
-            var parameters = new DynamicParameters();
-
-            parameters.Add("@ConnectionId", request.ConnectionId);
-
-            parameters.Add("@CurrentUserId", User.GetUserId());
-
-            parameters.Add("@Action", request.Action.ToString());
-
-            parameters.Add("@Success",dbType: DbType.Boolean,direction: ParameterDirection.Output);
-
-            parameters.Add("@Message",dbType: DbType.String,size: 500,direction: ParameterDirection.Output);
-
-            await _dbContext.ExecuteAsync("chat.ConnectionAction",parameters);
+            await _dbContext.ExecuteAsync(
+                "chat.SendConnectionRequest",
+                parameters);
 
             var response = new ApiResponse
             {
@@ -80,6 +50,54 @@ namespace FingersAPI.Controllers
             };
 
             return Ok(response);
+        }
+
+        [HttpPost("action")]
+        public async Task<IActionResult> ConnectionAction(
+            ConnectionActionRequest request)
+        {
+            var parameters = new DynamicParameters();
+
+            parameters.Add("@ConnectionId", request.ConnectionId);
+            parameters.Add("@CurrentUserId", User.GetUserId());
+            parameters.Add("@Action", request.Action.ToString());
+
+            parameters.Add("@Success",
+                dbType: DbType.Boolean,
+                direction: ParameterDirection.Output);
+
+            parameters.Add("@Message",
+                dbType: DbType.String,
+                size: 500,
+                direction: ParameterDirection.Output);
+
+            await _dbContext.ExecuteAsync(
+                "chat.ConnectionAction",
+                parameters);
+
+            var response = new ApiResponse
+            {
+                Success = parameters.Get<bool>("@Success"),
+                Message = parameters.Get<string>("@Message")!
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPost("list")]
+        public async Task<IActionResult> GetConnectionList(
+            ConnectionListRequest request)
+        {
+            var parameters = new DynamicParameters();
+
+            parameters.Add("@UserId", User.GetUserId());
+            parameters.Add("@ListType", request.ListType.ToString());
+
+            var result = await _dbContext.ExecuteQueryAsyncList<ConnectionListResult>(
+                "chat.ConnectionListGet",
+                parameters);
+
+            return Ok(result);
         }
     }
 }
