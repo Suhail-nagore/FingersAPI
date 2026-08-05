@@ -15,7 +15,6 @@
     <Folder Include="StoredProcedures\Test\" />
     <Folder Include="Tables\Common\" />
     <Folder Include="Tables\Auth\" />
-    <Folder Include="Tables\Chat\" />
     <Folder Include="Views\" />
   </ItemGroup>
 
