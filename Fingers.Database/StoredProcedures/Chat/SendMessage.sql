@@ -8,7 +8,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [chat].[SendMessage]
+Alter PROCEDURE [chat].[SendMessage]
 (
     @SenderUserId BIGINT,
     @ReceiverUserId BIGINT,
@@ -83,7 +83,7 @@ BEGIN
             FROM OPENJSON(@Attachments)
             WITH
             (
-                AttachmentId BIGINT '$.attachmentId'
+                AttachmentId BIGINT '$.AttachmentId'
             );
         END;
 
@@ -238,23 +238,7 @@ END;
             RETURN;
         END;
 
-         ----------------------------------------------------------------------
-        -- Validate Message Content
-        ----------------------------------------------------------------------
-
-        IF @Content IS NULL
-           AND NOT EXISTS
-           (
-               SELECT 1
-               FROM #Attachments
-           )
-        BEGIN
-            SET @Success = 0;
-            SET @Message = 'Message content or attachment is required.';
-
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
+        
 
         ----------------------------------------------------------------------
         -- Validate Message Type
@@ -385,7 +369,39 @@ BEGIN
         RETURN;
     END;
 END;
-            ----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+-- Copy Forwarded Message Content
+----------------------------------------------------------------------
+
+IF @ForwardedFromMessageId IS NOT NULL
+BEGIN
+    SELECT
+        @Content = Content,
+        @MessageTypeId = MessageTypeId
+    FROM chat.Messages
+    WHERE MessageId = @ForwardedFromMessageId;
+END;
+
+
+ ----------------------------------------------------------------------
+        -- Validate Message Content
+        ----------------------------------------------------------------------
+
+        IF @Content IS NULL
+           AND NOT EXISTS
+           (
+               SELECT 1
+               FROM #Attachments
+           )
+        BEGIN
+            SET @Success = 0;
+            SET @Message = 'Message content or attachment is required.';
+
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+----------------------------------------------------------------------
 -- Insert Message
 ----------------------------------------------------------------------
 

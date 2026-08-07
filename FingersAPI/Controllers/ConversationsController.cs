@@ -27,6 +27,8 @@ namespace FingersAPI.Controllers
         {
             var parameters = new DynamicParameters();
 
+            var attachmentsJson = JsonSerializer.Serialize(request.Attachments);
+
             parameters.Add("@SenderUserId", User.GetUserId());
             parameters.Add("@ReceiverUserId", request.ReceiverUserId);
             parameters.Add("@ClientMessageId", request.ClientMessageId);
@@ -34,7 +36,7 @@ namespace FingersAPI.Controllers
             parameters.Add("@Content", request.Content);
             parameters.Add("@ReplyToMessageId", request.ReplyToMessageId);
             parameters.Add("@ForwardedFromMessageId", request.ForwardedFromMessageId);
-            parameters.Add("@Attachments", JsonSerializer.Serialize(request.Attachments));
+            parameters.Add("@Attachments", attachmentsJson);
             parameters.Add("@Success",dbType: DbType.Boolean,direction: ParameterDirection.Output);
             parameters.Add("@Message",dbType: DbType.String,size: 500,direction: ParameterDirection.Output);
 
