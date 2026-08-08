@@ -51,5 +51,22 @@ namespace FingersAPI.Controllers
 
             return Ok(response);
         }
+
+        [HttpPost("list")]
+        public async Task<IActionResult> GetConversations([FromBody] ConversationGetRequest request)
+        {
+            var parameters = new DynamicParameters();
+
+            parameters.Add("@CurrentUserId",User.GetUserId());
+            parameters.Add("@SearchText",request.SearchText);
+            var result = await _dbContext.ExecuteQueryAsyncList<ConversationListItem>("chat.ConversationsGet",parameters);
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Conversations retrieved successfully.",
+                Data = result
+            });
+        }
     }
 }
