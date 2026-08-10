@@ -1,10 +1,12 @@
 ﻿using Dapper;
 using FingersAPI.Database;
 using FingersAPI.Extensions;
+using FingersAPI.Models.Chat;
 using FingersAPI.Models.Common;
 using FingersAPI.Models.Conversation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text.Json;
 
@@ -67,6 +69,69 @@ namespace FingersAPI.Controllers
                 Message = "Conversations retrieved successfully.",
                 Data = result
             });
+        }
+
+        [HttpPost("messages")]
+        public async Task<IActionResult> GetMessages([FromBody] MessagesGetRequest request)
+        {
+            try
+            {
+                var parameters = new DynamicParameters();
+
+                parameters.Add("@CurrentUserId", User.GetUserId());
+                parameters.Add("@ConversationId", request.ConversationId);
+                parameters.Add("@BeforeMessageId", request.BeforeMessageId);
+                parameters.Add("@PageSize", request.PageSize);
+
+                var results = await _dbContext.ExecuteQueryAsyncList<MessageListItem>("chat.MessagesGet", parameters);
+
+                foreach (var result in results)
+                {
+                    if (!string.IsNullOrWhiteSpace(result.AttachmentsJson))
+                    {
+                        result.Attachments = JsonSerializer.Deserialize<List<MessageAttachmentItem>>(result.AttachmentsJson) ?? new List<MessageAttachmentItem>();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(result.ReceiptsJson))
+                    {
+                        result.Receipts = JsonSerializer.Deserialize<List<MessageReceiptItem>>(result.ReceiptsJson) ?? new List<MessageReceiptItem>();
+                    }
+                }
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Messages retrived successfully",
+                    Data = results
+                });
+            }
+            catch (SqlException ex) when (ex.Number == 50001)
+            {
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Invalid user.",
+                    Data = null
+                });
+            }
+            catch (SqlException ex) when (ex.Number == 50002)
+            {
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Conversation not found.",
+                    Data = null
+                });
+            }
+            catch (SqlException ex) when (ex.Number == 50003)
+            {
+                return Ok(new ApiResponse
+                {
+                    Success = false,
+                    Message = "You are not a participant of this conversation.",
+                    Data = null
+                });
+            }
         }
     }
 }
