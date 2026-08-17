@@ -133,5 +133,44 @@ namespace FingersAPI.Controllers
                 });
             }
         }
+
+        [HttpPost("messages/delivered")]
+        public async Task<IActionResult> MarkMessageDelivered([FromBody] MarkMessageDeliveredRequest request)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@CurrentUserId", User.GetUserId());
+            parameters.Add("@MessageId", request.MessageId);
+            parameters.Add("@Success", dbType: DbType.Boolean, direction: ParameterDirection.Output);
+            parameters.Add("@Message", dbType:DbType.String, direction: ParameterDirection.Output, size:500);
+
+            var result = await _dbContext.ExecuteQueryAsyncList<MarkMessageDeliveredResult>("chat.MarkMessageDelivered", parameters);
+
+            return Ok(new ApiResponse
+            {
+                Success = parameters.Get<bool>("@Success"),
+                Message = parameters.Get<string>("@Message"),
+                Data = result
+            });
+        }
+
+        [HttpPost("messages/read")]
+        public async Task<IActionResult> MarkMessagesRead([FromBody] MarkMessagesReadRequest request)
+        {
+            var parameter = new DynamicParameters();
+
+            parameter.Add("@CurrentUserId", User.GetUserId());
+            parameter.Add("@ConversationId", request.ConversationId);
+            parameter.Add("@LastReadMessageId", request.LastMessageReadId);
+            parameter.Add("@Success", dbType:DbType.Boolean, direction: ParameterDirection.Output);
+            parameter.Add("@Message", dbType:DbType.String,direction: ParameterDirection.Output, size:500);
+
+            await _dbContext.ExecuteAsync("chat.MarkMessagesRead", parameter);
+
+            return Ok(new ApiResponse
+            {
+                Success = parameter.Get<bool>("@Success"),
+                Message = parameter.Get<string>("@Message")
+            });
+        }
     }
 }
