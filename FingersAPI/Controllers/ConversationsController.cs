@@ -192,5 +192,24 @@ namespace FingersAPI.Controllers
                 Message = parameter.Get<string>("@Message")
             });
         }
+
+        [HttpPost("messages/delete")]
+        public async Task<IActionResult> DeleteMessage([FromBody] DeleteMessageRequest request)
+        {
+            var parameter = new DynamicParameters();
+
+            parameter.Add("@CurrentUserId", User.GetUserId());
+            parameter.Add("@MessageId", request.MessageId);
+            parameter.Add("@Success", dbType: DbType.Boolean, direction: ParameterDirection.Output);
+            parameter.Add("@Message", dbType: DbType.String, direction: ParameterDirection.Output, size: 500);
+
+            await _dbContext.ExecuteAsync("chat.DeleteMessage", parameter);
+
+            return Ok(new ApiResponse
+            {
+                Success = parameter.Get<bool>("@Success"),
+                Message = parameter.Get<string>("@Message")
+            });
+        }
     }
 }

@@ -35,6 +35,10 @@ namespace FingersAPI.Models.Chat
 
         public byte? ReplyToMessageTypeId { get; set; }
 
+        public DateTime? ReplyToDeletedOn { get; set; }
+
+        public bool IsReplyToDeleted { get; set; }
+
         // ------------------------------------------------------------
         // Forward
         // ------------------------------------------------------------
@@ -48,6 +52,10 @@ namespace FingersAPI.Models.Chat
         public string? ForwardedSenderDisplayName { get; set; }
 
         public byte? ForwardedMessageTypeId { get; set; }
+
+        public DateTime? ForwardedDeletedOn { get; set; }
+
+        public bool IsForwardedMessageDeleted { get; set; }
 
         // ------------------------------------------------------------
         // Edit
