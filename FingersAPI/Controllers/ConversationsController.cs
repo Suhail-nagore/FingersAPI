@@ -172,5 +172,25 @@ namespace FingersAPI.Controllers
                 Message = parameter.Get<string>("@Message")
             });
         }
+
+        [HttpPost("messages/edit")]
+        public async Task<IActionResult> EditMessage([FromBody] EditMessageRequest request)
+        {
+            var parameter = new DynamicParameters();
+
+            parameter.Add("@CurrentUserId", User.GetUserId());
+            parameter.Add("@MessageId", request.MessageId);
+            parameter.Add("@Content", request.Content);
+            parameter.Add("@Success", dbType:DbType.Boolean, direction: ParameterDirection.Output);
+            parameter.Add("@Message", dbType:DbType.String, direction: ParameterDirection.Output, size:500);
+
+            await _dbContext.ExecuteAsync("chat.EditMessage", parameter);
+
+            return Ok(new ApiResponse
+            {
+                Success = parameter.Get<bool>("@Success"),
+                Message = parameter.Get<string>("@Message")
+            });
+        }
     }
 }
