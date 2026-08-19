@@ -1,7 +1,11 @@
+using CloudinaryDotNet;
 using FingersAPI.Database;
 using FingersAPI.Extensions;
+using FingersAPI.Models.Configuration;
 using FingersAPI.Services;
+using FingersAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;         
 using System.Text;
@@ -16,6 +20,16 @@ builder.Services.AddControllers().AddJsonOptions(options =>
         );
 });
 builder.Services.AddApplicationServices();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+
+builder.Services.AddSingleton(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+    var account = new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
+    return new Cloudinary(account);
+});
+
+builder.Services.AddScoped<IFileStorageService, CloudinaryStorageService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
