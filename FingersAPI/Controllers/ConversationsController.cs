@@ -3,10 +3,13 @@ using FingersAPI.Database;
 using FingersAPI.Extensions;
 using FingersAPI.Models.Chat;
 using FingersAPI.Models.Common;
+using FingersAPI.Models.Configuration;
 using FingersAPI.Models.Conversation;
+using FingersAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 using System.Data;
 using System.Text.Json;
 
@@ -18,10 +21,14 @@ namespace FingersAPI.Controllers
     public class ConversationsController : Controller
     {
         private readonly IDbContext _dbContext;
+        private readonly IFileStorageService _fileStorageService;
+        private readonly CloudinarySettings _cloudinarySettings;
 
-        public ConversationsController(IDbContext dbContext) 
+        public ConversationsController(IDbContext dbContext, IFileStorageService fileStorageService, IOptions<CloudinarySettings> cloudinaryOptions) 
         { 
             _dbContext = dbContext;
+            _fileStorageService = fileStorageService;
+            _cloudinarySettings = cloudinaryOptions.Value;
         }
 
         [HttpPost("send-message")]
@@ -156,60 +163,153 @@ namespace FingersAPI.Controllers
         [HttpPost("messages/read")]
         public async Task<IActionResult> MarkMessagesRead([FromBody] MarkMessagesReadRequest request)
         {
-            var parameter = new DynamicParameters();
+            var parameters = new DynamicParameters();
 
-            parameter.Add("@CurrentUserId", User.GetUserId());
-            parameter.Add("@ConversationId", request.ConversationId);
-            parameter.Add("@LastReadMessageId", request.LastMessageReadId);
-            parameter.Add("@Success", dbType:DbType.Boolean, direction: ParameterDirection.Output);
-            parameter.Add("@Message", dbType:DbType.String,direction: ParameterDirection.Output, size:500);
+            parameters.Add("@CurrentUserId", User.GetUserId());
+            parameters.Add("@ConversationId", request.ConversationId);
+            parameters.Add("@LastReadMessageId", request.LastMessageReadId);
+            parameters.Add("@Success", dbType:DbType.Boolean, direction: ParameterDirection.Output);
+            parameters.Add("@Message", dbType:DbType.String,direction: ParameterDirection.Output, size:500);
 
-            await _dbContext.ExecuteAsync("chat.MarkMessagesRead", parameter);
+            await _dbContext.ExecuteAsync("chat.MarkMessagesRead", parameters);
 
             return Ok(new ApiResponse
             {
-                Success = parameter.Get<bool>("@Success"),
-                Message = parameter.Get<string>("@Message")
+                Success = parameters.Get<bool>("@Success"),
+                Message = parameters.Get<string>("@Message")
             });
         }
 
         [HttpPost("messages/edit")]
         public async Task<IActionResult> EditMessage([FromBody] EditMessageRequest request)
         {
-            var parameter = new DynamicParameters();
+            var parameters = new DynamicParameters();
 
-            parameter.Add("@CurrentUserId", User.GetUserId());
-            parameter.Add("@MessageId", request.MessageId);
-            parameter.Add("@Content", request.Content);
-            parameter.Add("@Success", dbType:DbType.Boolean, direction: ParameterDirection.Output);
-            parameter.Add("@Message", dbType:DbType.String, direction: ParameterDirection.Output, size:500);
+            parameters.Add("@CurrentUserId", User.GetUserId());
+            parameters.Add("@MessageId", request.MessageId);
+            parameters.Add("@Content", request.Content);
+            parameters.Add("@Success", dbType:DbType.Boolean, direction: ParameterDirection.Output);
+            parameters.Add("@Message", dbType:DbType.String, direction: ParameterDirection.Output, size:500);
 
-            await _dbContext.ExecuteAsync("chat.EditMessage", parameter);
+            await _dbContext.ExecuteAsync("chat.EditMessage", parameters);
 
             return Ok(new ApiResponse
             {
-                Success = parameter.Get<bool>("@Success"),
-                Message = parameter.Get<string>("@Message")
+                Success = parameters.Get<bool>("@Success"),
+                Message = parameters.Get<string>("@Message")
             });
         }
 
         [HttpPost("messages/delete")]
         public async Task<IActionResult> DeleteMessage([FromBody] DeleteMessageRequest request)
         {
-            var parameter = new DynamicParameters();
+            var parameters = new DynamicParameters();
 
-            parameter.Add("@CurrentUserId", User.GetUserId());
-            parameter.Add("@MessageId", request.MessageId);
-            parameter.Add("@Success", dbType: DbType.Boolean, direction: ParameterDirection.Output);
-            parameter.Add("@Message", dbType: DbType.String, direction: ParameterDirection.Output, size: 500);
+            parameters.Add("@CurrentUserId", User.GetUserId());
+            parameters.Add("@MessageId", request.MessageId);
+            parameters.Add("@Success", dbType: DbType.Boolean, direction: ParameterDirection.Output);
+            parameters.Add("@Message", dbType: DbType.String, direction: ParameterDirection.Output, size: 500);
 
-            await _dbContext.ExecuteAsync("chat.DeleteMessage", parameter);
+            await _dbContext.ExecuteAsync("chat.DeleteMessage", parameters);
 
             return Ok(new ApiResponse
             {
-                Success = parameter.Get<bool>("@Success"),
-                Message = parameter.Get<string>("@Message")
+                Success = parameters.Get<bool>("@Success"),
+                Message = parameters.Get<string>("@Message")
             });
         }
+
+        [HttpPost("attachements/upload-signature")]
+        public async Task<IActionResult> GenerateAttachementUploadSignature([FromBody] AttachementUploadSignatureRequest request)
+        {
+            if( request == null)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Request is required"
+                });
+            }
+
+            var resourceType = request.ResourceType?.Trim().ToLowerInvariant();
+
+            if(resourceType != "image" && resourceType != "video")
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Only image and video uploads are currently supported"
+                });
+            }
+
+            var timeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            var folder = "chat-media";
+            var parameters = new Dictionary<string, object>
+            {
+                ["timeStamp"] = timeStamp,
+                ["folder"] = folder,
+            };
+
+            var signature = _fileStorageService.GenerateUploadSignature(parameters);
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Upload signature generated successfully",
+                Data = new AttachementUploadSignatureResponse
+                {
+                    Signature = signature,
+                    TimeStamp = timeStamp,
+                    CloudName = _cloudinarySettings.CloudName,
+                    ApiKey = _cloudinarySettings.ApiKey,
+                    ResourceType = resourceType,
+                    Folder = folder
+                }
+            });
+
+        }
+
+        [HttpPost("attachments")]
+        public async Task<IActionResult> CreateAttachments([FromBody] AttachmentCreateRequest request)
+        {
+            var currentUserId = User.GetUserId();
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add("@UploadedByUserId", currentUserId);
+            parameters.Add("@PublicId", request.PublicId);
+            parameters.Add("@FileName", request.FileName);
+            parameters.Add("@OriginalFileName", request.OriginalFileName);
+            parameters.Add("@contentType", request.ContentType);
+            parameters.Add("@FileExtension", request.FileExtension);
+            parameters.Add("@FileSize", request.FileSize);
+            parameters.Add("@StoragePath", request.StoragePath);
+            parameters.Add("@ThumbnailPath", request.ThumbnailPath);
+            parameters.Add("@DurationInSeconds", request.DurationInSeconds);
+            parameters.Add("@Width", request.Width);
+            parameters.Add("@Height", request.Height);
+
+            var result = await _dbContext.ExecuteQueryAsyncList<AttachmentCreateResponse>("chat.MessageAttachmentsCreate", parameters);
+
+            var attachments = result.FirstOrDefault();
+
+            if(attachments == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
+                {
+                    Success = false,
+                    Message = "Attachment could not be created",
+                });
+            }
+
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Atttachment created successfully.",
+                Data = attachments
+            });
+        }
+
     }
 }
